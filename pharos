@@ -111,6 +111,7 @@ def main():
 	logger.info('Response dictionary = %s' %printjobparams)
 		
 	logger.info('User ID received = %s' %printjobparams["userid"])
+	logger.info('User Pass received = %s' %printjobparams["userpass"])
 	logger.info('Print Command received = %s' %printjobparams["printjob"])
 	
 	# Calculate actual LPD queue DEVICE URI
@@ -125,12 +126,13 @@ def main():
 	# Check input arguments
 	jobID = sys.argv[1]
 	userName = sys.argv[2]
-	jobTitle = sys.argv[3]
-	copies = sys.argv[4]
-	printOptions = sys.argv[5]
-	if len(sys.argv) > 6:
-		logger.info('using printFile %s' %sys.argv[6])
-		printFile = sys.argv[6]
+	userPass = sys.argv[3]
+	jobTitle = sys.argv[4]
+	copies = sys.argv[5]
+	printOptions = sys.argv[6]
+	if len(sys.argv) > 7:
+		logger.info('using printFile %s' %sys.argv[7])
+		printFile = sys.argv[7]
 	else:
 		# Create print file from STDIN
 		logger.info('printFile argument not supplied, will create it using STDIN')
@@ -148,8 +150,8 @@ def main():
 			os.unlink(printFile)
 		sys.exit(CUPS_BACKEND_CANCEL)
 
-	logger.info('Job Arguments (Job ID: %s, User Name: %s, Job Title: %s, Copies: %s, Print Options: %s, Print File: %s)' %(jobID,  userName,  jobTitle,  copies,  printOptions,  printFile))	
-	command = [os.path.join(cupsBackendDIR, 'lpd'), jobID,  printjobparams["userid"],  jobTitle,  copies,  printOptions,  printFile]
+	logger.info('Job Arguments (Job ID: %s, User Name: %s, User Pass: %s, Job Title: %s, Copies: %s, Print Options: %s, Print File: %s)' %(jobID,  userName,  userPass,  jobTitle,  copies,  printOptions,  printFile))	
+	command = [os.path.join(cupsBackendDIR, 'lpd'), jobID,  printjobparams["userid"],  printjobparams["userpass"],  jobTitle,  copies,  printOptions,  printFile]
 	logger.info("Running Command with pipe separated arguments: " + "|".join(command))
 	returnCode = subprocess.call(command)
 	logger.info('Command return code = %d' %(returnCode))

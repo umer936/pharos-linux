@@ -36,9 +36,10 @@ class wxPopupFrame(wx.Frame):
 		titleFont = wx.Font(14, wx.DEFAULT, wx.NORMAL, wx.BOLD)		
 		self.titleText = wx.StaticText(self, -1, "Print Job Details")
 		self.titleText.SetFont(titleFont)
-		self.userInputText = wx.StaticText(self, -1, "Please enter your myIIT ID*")
-		self.sizingPanelAfterUserInputText = wx.Panel(self, -1)
-		self.userInputTextCtrl = wx.TextCtrl(self, -1, "",  style=wx.TE_PROCESS_ENTER)
+		self.userInputText = wx.StaticText(self, -1, "Please enter your UT EID*")
+		self.userInputPass = wx.StaticText(self, -1, "Please enter your password")
+		self.sizingPanelAfterUserInputPass = wx.Panel(self, -1)
+		self.userInputPassCtrl = wx.TextCtrl(self, -1, "",  style=wx.TE_PROCESS_ENTER)
 		self.userInformationText = wx.StaticText(self, -1, "* This ID will be used at the release station to release your print job")
 		self.sizingPanelBeforeButtons = wx.Panel(self, -1)
 		self.printButton = wx.Button(self, -1, "Print")
@@ -50,7 +51,7 @@ class wxPopupFrame(wx.Frame):
 		self.Bind(wx.EVT_BUTTON, self.printCommand, self.printButton)
 		self.Bind(wx.EVT_BUTTON, self.cancelCommand, self.cancelButton)
 		self.Bind(wx.EVT_CLOSE,  self.cancelCommand) 
-		self.Bind(wx.EVT_TEXT_ENTER,  self.printCommand,  self.userInputTextCtrl)
+		self.Bind(wx.EVT_TEXT_ENTER,  self.printCommand,  self.userInputPassCtrl)
 
 		if os.path.exists(configFilePath):
 			config = ConfigParser.SafeConfigParser({'cachedid':'None',  'currentid': 'None'})
@@ -71,8 +72,10 @@ class wxPopupFrame(wx.Frame):
 		userInputBoxSizer = wx.BoxSizer(wx.HORIZONTAL)
 		PopupFrameSizer.Add(self.titleText, 0, wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_VERTICAL, 2)
 		userInputBoxSizer.Add(self.userInputText, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
-		userInputBoxSizer.Add(self.sizingPanelAfterUserInputText, 1, wx.EXPAND, 0)
+		userInputBoxSizer.Add(self.userInputPass, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+		userInputBoxSizer.Add(self.sizingPanelAfterUserInputPass, 1, wx.EXPAND, 0)
 		userInputBoxSizer.Add(self.userInputTextCtrl, 10, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
+		userInputBoxSizer.Add(self.userInputPassCtrl, 10, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
 		PopupFrameSizer.Add(userInputBoxSizer, 1, wx.EXPAND, 0)
 		PopupFrameSizer.Add(self.userInformationText, 0, 0, 0)
 		buttonsBoxSizer.Add(self.sizingPanelBeforeButtons, 1, wx.EXPAND, 0)
@@ -91,6 +94,7 @@ class wxPopupFrame(wx.Frame):
 		config.add_section('pharos')
 		config.set("pharos",  "currentid", userId)
 		config.set("pharos",  "cachedid", userId)
+		config.set("pharos",  "currentpass", userPass)
 		config.set("pharos",  "printjob", 'yes')
 		with open(configFilePath,  'wb') as configFile:
 			config.write(configFile)		
@@ -100,15 +104,22 @@ class wxPopupFrame(wx.Frame):
 	def printCommand(self, event):
 		"""Handle the users choice of clicking the print button"""
 		inputLength = len(self.userInputTextCtrl.GetValue().strip())
+		passLength = len(self.userInputPassCtrl.GetValue().strip())
 		if self.userInputTextCtrl.IsEmpty() or inputLength == 0:
 			logger.warn('User entered invalid input. Displaying warning message')
 			errorDialog = wx.MessageDialog(self, "User ID cannot be blank", "Input Error",  wx.OK | wx.ICON_ERROR)
 			errorDialog.ShowModal()
 			self.userInputTextCtrl.Clear()
+		elif self.userInputPassCtrl.IsEmpty() or passLength == 0:
+			logger.warn('User entered invalid input. Displaying warning message')
+			errorDialog = wx.MessageDialog(self, "User pass cannot be blank", "Input Error",  wx.OK | wx.ICON_ERROR)
+			errorDialog.ShowModal()
+			self.userInputPassCtrl.Clear()
 		else:                
 			# Write to config file
 			logger.info("Updating config file on user input %s" %(self.userInputTextCtrl.GetValue().strip()))
 			self.updateConfig(self.userInputTextCtrl.GetValue().strip())
+			self.updateConfig(self.userInputPassCtrl.GetValue().strip())
 			self.Destroy()
 			event.Skip()
 
@@ -208,7 +219,8 @@ class PharosPopupServer:
 			printjob = config.get("pharos", "printjob")
 			if cachedId != 'None':
 				self.logger.info('Returning user ID = %s' %cachedId)
-				return "userid:" + cachedId + ",printjob:" + printjob
+				self.logger.info('Returning user pass = %s' %cachedPass)
+				return "userid:" + cachedId + ",userpass:" + cachedPass + ",printjob:" + printjob
 		
 		self.logger.warn('Returning user ID = NONE')
 		return "userid: None,printjob: no"
